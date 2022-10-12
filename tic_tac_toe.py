@@ -6,23 +6,15 @@ It can be played by humans or by AI tic-tac-toe bots.
 """
 
 
-def to_spot(row_coord, col_coord):
-    """
-    Get a move number from coordinates.
-    """
-    print(f"in to_spot. row: {row_coord}, col: {col_coord}")
-    return [k for k in sorted(TicTacToe.SPOTS.keys()) if TicTacToe.SPOTS[k] == (row_coord, col_coord)][0]
-
-
 class TicTacToe:
 
     OUTCOMES = ('player O wins', 'player X wins', 'draw', 'in progress')
     PLAYER_ONE = 'X'
     PLAYER_TWO = 'O'
     EMPTY = '-'
-    SPOTS = {0: (0, 0), 1: (0, 1), 2: (0, 2),
-             3: (1, 0), 4: (1, 1), 5: (1, 2),
-             6: (2, 0), 7: (2, 1), 8: (2, 2)}
+    SPOTS = {1: (0, 0), 2: (0, 1), 3: (0, 2),
+             4: (1, 0), 5: (1, 1), 6: (1, 2),
+             7: (2, 0), 8: (2, 1), 9: (2, 2)}
 
     def __init__(self):
         self.board = [[self.EMPTY, self.EMPTY, self.EMPTY],
@@ -69,7 +61,7 @@ class TicTacToe:
         if self.outcome is not self.OUTCOMES[3]:
             return False
         # convert move by number to coordinates
-        if move not in range(9):
+        if move not in range(1, 10):
             return False
         move_row, move_col = self.SPOTS[move][0], self.SPOTS[move][1]
         # check for out of bounds moves

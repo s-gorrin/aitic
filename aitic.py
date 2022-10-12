@@ -1,15 +1,13 @@
 import random
 
 from tic_tac_toe import TicTacToe as Ttt
-from tic_tac_toe import to_spot
 
 
 def init_weights():
     """
     Set up the initial values of the weight table
     """
-    return {'0': 5,
-            '1': 5,
+    return {'1': 5,
             '2': 5,
             '3': 5,
             '4': 5,
@@ -17,15 +15,9 @@ def init_weights():
             '6': 5,
             '7': 5,
             '8': 5,
+            '9': 5,
             'win': 90,
             'prevent win': 50}
-
-
-def find(needle, haystack):
-    for i in range(len(haystack)):
-        if haystack[i] == needle:
-            return i
-    return False
 
 
 class AItic:
@@ -37,6 +29,7 @@ class AItic:
         """
         self.symbol = symbol
         self.opponent = [s for s in (Ttt.PLAYER_ONE, Ttt.PLAYER_TWO) if s != symbol][0]
+        print(f"opponent: {self.opponent}")
         self.weighted_moves = init_weights()
         self.moves_this_turn = {}
         self.weighted_this_turn = {}
@@ -77,31 +70,38 @@ class AItic:
         win = False
         prevent_win = False
         # check rows
-        for r in range(0, 7, 3):
+        for r in range(1, 8, 3):
             # row = [self.game.at(r), self.game.at(r + 1), self.game.at(r + 2)]
             row = [r, r + 1, r + 2]
-            win, prevent_win = self.check_special(row)
+            analysis = self.check_special(row)
+            if not win:
+                win = analysis[0]
+            if not prevent_win:
+                prevent_win = analysis[1]
         # check columns
-        for c in range(3):
+        for c in range(1, 4):
             # col = [self.game.at(c), self.game.at(c + 3), self.game.at(c + 6)]
             col = [c, c + 3, c + 6]
+            analysis = self.check_special(col)
             if not win:
-                win = self.check_special(col)[0]
+                win = analysis[0]
             if not prevent_win:
-                prevent_win = self.check_special(col)[1]
+                prevent_win = analysis[1]
         # check diagonals
         # dig = [self.game.at(0), self.game.at(4), self.game.at(8)]
-        dig = [0, 4, 8]
+        dig = [1, 5, 9]
+        analysis = self.check_special(dig)
         if not win:
-            win = self.check_special(dig)[0]
+            win = analysis[0]
         if not prevent_win:
-            prevent_win = self.check_special(dig)[1]
+            prevent_win = analysis[1]
         # dig = [self.game.at(2), self.game.at(4), self.game.at(6)]
-        dig = [2, 4, 6]
+        dig = [3, 5, 7]
+        analysis = self.check_special(dig)
         if not win:
-            win = self.check_special(dig)[0]
+            win = analysis[0]
         if not prevent_win:
-            prevent_win = self.check_special(dig)[1]
+            prevent_win = analysis[1]
         print(f"specials found? win: {win}, prevent: {prevent_win}")
         return win, prevent_win
 
@@ -112,15 +112,12 @@ class AItic:
         win, prevent_win = self.analyze_specials()
         empties = []
         # generate list of empty spots in the board
-        print("spots: ", end="")
-        for spot in range(len(Ttt.SPOTS)):
-            print(spot, end=" ")
+        for spot in range(1, len(Ttt.SPOTS) + 1):
             if self.game.at(spot) == Ttt.EMPTY:
                 if win is spot or prevent_win is spot:  # avoid duplicate entries
                     pass
                 else:
                     empties.append(spot)
-        print(f"\nbot empties: {empties}")
         names = [k for k in sorted(self.weighted_moves.keys())
                  if k != 'win' and k != 'prevent win' and k < str(len(empties))]
         # generate a dictionary of moves that are playable this turn
@@ -164,17 +161,22 @@ class AItic:
         self.pick_move()
 
     def game_over(self, outcome):
+        """
+        Backwards propagate outcome to learn from the game.
+        Reward or punish moves depending on whether the game was a win or loss.
+        """
         if (self.symbol == Ttt.PLAYER_ONE and outcome == Ttt.OUTCOMES[1]) or \
                 (self.symbol == Ttt.PLAYER_TWO and outcome == Ttt.OUTCOMES[0]):  # win
-            for value in self.weighted_moves:
-                value += 1
+            for move in self.moves_this_game:
+                self.weighted_moves[move] += 1
         elif outcome == Ttt.OUTCOMES[2]:  # draw
             pass
         else:  # lose
-            for value in self.weighted_moves:
-                value -= 1
+            for move in self.moves_this_game:
+                self.weighted_moves[move] -= 1
 
 
+"""
 if __name__ == '__main__':
     game = Ttt()
     bot = AItic(Ttt.PLAYER_ONE, game)
@@ -185,3 +187,4 @@ if __name__ == '__main__':
             break
         human = input("play a move: ")
         game.make_move(int(human))
+"""
