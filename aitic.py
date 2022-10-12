@@ -29,7 +29,6 @@ class AItic:
         """
         self.symbol = symbol
         self.opponent = [s for s in (Ttt.PLAYER_ONE, Ttt.PLAYER_TWO) if s != symbol][0]
-        print(f"opponent: {self.opponent}")
         self.weighted_moves = init_weights()
         self.moves_this_turn = {}
         self.weighted_this_turn = {}
@@ -71,7 +70,6 @@ class AItic:
         prevent_win = False
         # check rows
         for r in range(1, 8, 3):
-            # row = [self.game.at(r), self.game.at(r + 1), self.game.at(r + 2)]
             row = [r, r + 1, r + 2]
             analysis = self.check_special(row)
             if not win:
@@ -80,7 +78,6 @@ class AItic:
                 prevent_win = analysis[1]
         # check columns
         for c in range(1, 4):
-            # col = [self.game.at(c), self.game.at(c + 3), self.game.at(c + 6)]
             col = [c, c + 3, c + 6]
             analysis = self.check_special(col)
             if not win:
@@ -88,21 +85,18 @@ class AItic:
             if not prevent_win:
                 prevent_win = analysis[1]
         # check diagonals
-        # dig = [self.game.at(0), self.game.at(4), self.game.at(8)]
         dig = [1, 5, 9]
         analysis = self.check_special(dig)
         if not win:
             win = analysis[0]
         if not prevent_win:
             prevent_win = analysis[1]
-        # dig = [self.game.at(2), self.game.at(4), self.game.at(6)]
         dig = [3, 5, 7]
         analysis = self.check_special(dig)
         if not win:
             win = analysis[0]
         if not prevent_win:
             prevent_win = analysis[1]
-        print(f"specials found? win: {win}, prevent: {prevent_win}")
         return win, prevent_win
 
     def analyze_board(self):
@@ -119,7 +113,7 @@ class AItic:
                 else:
                     empties.append(spot)
         names = [k for k in sorted(self.weighted_moves.keys())
-                 if k != 'win' and k != 'prevent win' and k < str(len(empties))]
+                 if k != 'win' and k != 'prevent win' and k <= str(len(empties))]
         # generate a dictionary of moves that are playable this turn
         # in the format {weighted_move_name: tic-tac-toe move}
         moves = dict(zip(names, empties))
@@ -131,7 +125,6 @@ class AItic:
 
     def weight_moves(self):
         self.weighted_this_turn.clear()
-        print(f"bot moves this turn: {self.moves_this_turn}")
         for move in self.moves_this_turn.keys():
             self.weighted_this_turn[move] = self.weighted_moves[move]
 
@@ -151,7 +144,6 @@ class AItic:
             for i in range(self.weighted_this_turn[key]):
                 weighted_list.append(key)
         move = random.choice(weighted_list)
-        print(f"bot picks {move}")
         self.moves_this_game.append(move)  # track moves played this game
         self.game.make_move(self.moves_this_turn[move])
 
@@ -164,6 +156,7 @@ class AItic:
         """
         Backwards propagate outcome to learn from the game.
         Reward or punish moves depending on whether the game was a win or loss.
+        This is fairly naive and losing bots tend to learn poorly.
         """
         if (self.symbol == Ttt.PLAYER_ONE and outcome == Ttt.OUTCOMES[1]) or \
                 (self.symbol == Ttt.PLAYER_TWO and outcome == Ttt.OUTCOMES[0]):  # win
@@ -173,11 +166,17 @@ class AItic:
             pass
         else:  # lose
             for move in self.moves_this_game:
-                self.weighted_moves[move] -= 1
+                if move != 'prevent win':  # do not learn that prevent win is bad
+                    self.weighted_moves[move] -= 1
+        for key in self.weighted_moves.keys():
+            if self.weighted_moves[key] < 1:
+                self.weighted_moves[key] = 1
 
 
-"""
 if __name__ == '__main__':
+    # play against the bot in a single game by making moves
+    # 1 - 9 when prompted. This is just a demo of the game,
+    # and does not allow time for the bot to learn.
     game = Ttt()
     bot = AItic(Ttt.PLAYER_ONE, game)
     while game.outcome == Ttt.OUTCOMES[3]:
@@ -185,6 +184,11 @@ if __name__ == '__main__':
         game.print_board()
         if game.outcome != Ttt.OUTCOMES[3]:
             break
-        human = input("play a move: ")
-        game.make_move(int(human))
-"""
+        move_success = False
+        while not move_success:
+            human = input("play a move: ")
+            move_success = game.make_move(int(human))
+
+    print("final board:")
+    game.print_board()
+    print(game.outcome)
